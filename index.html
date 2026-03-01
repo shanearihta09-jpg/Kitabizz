@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bible Quest - Petualangan Alkitab</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&amp;family=Nunito:wght@400;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    
+    .font-title { font-family: 'Cinzel', serif; letter-spacing: 0.1em; font-weight: 700; }
+    .font-body { font-family: 'Nunito', sans-serif; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-15px) rotate(1deg); }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.05); }
+      50% { box-shadow: 0 0 50px rgba(251, 191, 36, 0.8), inset 0 0 30px rgba(255, 255, 255, 0.1); }
+    }
+    
+    .float-animation { animation: float 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite; }
+    .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+    
+    /* World Card */
+    .world-card {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 2px solid rgba(251, 191, 36, 0.2);
+      background: linear-gradient(135deg, rgba(31, 41, 55, 0.8), rgba(15, 23, 42, 0.9));
+      backdrop-filter: blur(10px);
+    }
+    
+    .world-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -100%;
+      width: 150%;
+      height: 150%;
+      background: radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%);
+      transition: all 0.6s ease;
+      opacity: 0;
+    }
+    
+    .world-card:hover {
+      transform: translateY(-12px) scale(1.05);
+      border-color: rgba(251, 191, 36, 0.6);
+      box-shadow: 0 15px 50px rgba(251, 191, 36, 0.25), 0 0 30px rgba(251, 191, 36, 0.15);
+    }
+    
+    .world-card:hover::before {
+      opacity: 1;
+      left: 50%;
+    }
+    
+    /* Book Item */
+    .book-item {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      border: 1.5px solid rgba(251, 191, 36, 0.2);
+      background: linear-gradient(135deg, rgba(51, 65, 85, 0.6), rgba(30, 41, 59, 0.7));
+      backdrop-filter: blur(10px);
+    }
+    
+    .book-item::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    
+    .book-item:hover {
+      transform: translateX(10px);
+      border-color: rgba(251, 191, 36, 0.6);
+      box-shadow: 0 8px 25px rgba(251, 191, 36, 0.15), inset 0 0 20px rgba(251, 191, 36, 0.08);
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.3), rgba(51, 65, 85, 0.7));
+    }
+    
+    .book-item:hover::after { opacity: 1; }
+    
+    /* Progress Bar */
+    .progress-bar {
+      background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #fbbf24 100%);
+      background-size: 200% 100%;
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 10px;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.65);
+    }
+    
+    /* Game Option */
+    .game-option {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      background: linear-gradient(135deg, rgba(51, 65, 85, 0.7), rgba(30, 41, 59, 0.7));
+      border: 2px solid rgba(251, 191, 36, 0.25);
+      backdrop-filter: blur(8px);
+      overflow: hidden;
+    }
+    
+    .game-option::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .game-option:hover:not(:disabled)::before { left: 100%; }
+    
+    .game-option:hover:not(:disabled) {
+      transform: scale(1.03) translateX(5px);
+      border-color: rgba(251, 191, 36, 0.7);
+      box-shadow: 0 8px 25px rgba(251, 191, 36, 0.25), inset 0 0 15px rgba(251, 191, 36, 0.1);
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.4), rgba(51, 65, 85, 0.7));
+    }
+    
+    .game-option.correct {
+      animation: correctPulse 0.6s ease;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
+      border-color: rgba(34, 197, 94, 0.9);
+      box-shadow: 0 0 35px rgba(34, 197, 94, 0.7);
+    }
+    
+    .game-option.wrong {
+      animation: wrongShake 0.5s ease;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+      border-color: rgba(239, 68, 68, 0.9);
+      box-shadow: 0 0 35px rgba(239, 68, 68, 0.7);
+    }
+    
+    @keyframes correctPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    @keyframes wrongShake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+      20%, 40%, 60%, 80% { transform: translateX(8px); }
+    }
+    
+    .star-filled { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.6); }
+    .star-empty { color: rgba(55, 65, 81, 0.8); }
+    
+    .scroll-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(251, 191, 36, 0.5) rgba(15, 23, 42, 0.3);
+    }
+    
+    .scroll-container::-webkit-scrollbar { width: 10px; }
+    .scroll-container::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.3); border-radius: 10px; }
+    .scroll-container::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(251, 191, 36, 0.7), rgba(251, 191, 36, 0.4));
+      border-radius: 10px;
+      border: 2px solid rgba(15, 23, 42, 0.3);
+    }
+    .scroll-container::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, rgba(251, 191, 36, 0.9), rgba(251, 191, 36, 0.6)); }
+    
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+      50% { transform: scale(1.2) rotate(10deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .question-image {
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full font-body">
+  <div id="app" class="h-full w-full overflow-auto scroll-container" style="background: linear-gradient(135deg, #0f172a 0%, #1a0f3d 25%, #0f172a 50%, #1a0f3d 75%, #0f172a 100%);background-size:400% 400%;animation:gradientShift 15s ease infinite">
+   <!-- Main Menu Screen -->
+   <div id="main-menu" class="min-h-full flex flex-col items-center justify-center p-6">
+    <div class="text-center mb-12 float-animation">
+     <div class="text-8xl mb-6 drop-shadow-lg">
+      📖
+     </div>
+     <h1 id="game-title" class="font-title text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-300 to-yellow-400 mb-4 drop-shadow-lg">Bible Quest</h1>
+     <p id="welcome-text" class="text-amber-200/90 text-lg md:text-xl max-w-md mx-auto font-light">Petualangan Mempelajari Firman Tuhan</p>
+    </div>
+    <div class="flex flex-col gap-4 w-full max-w-sm">
+     <button onclick="showWorldMap()" class="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-900 font-bold text-lg rounded-2xl transition-all transform hover:scale-105 pulse-glow shadow-2xl"> 🎮 Mulai Petualangan </button> <button onclick="showProgress()" class="px-8 py-4 bg-slate-800/60 hover:bg-slate-700/60 text-amber-300 font-semibold rounded-2xl border-2 border-amber-500/30 transition-all"> 📊 Lihat Progress </button> <button onclick="showAbout()" class="px-8 py-4 bg-slate-800/40 hover:bg-slate-700/40 text-slate-300 font-semibold rounded-2xl transition-all"> ℹ️ Tentang Game </button>
+    </div>
+    <div id="total-progress" class="mt-12 text-center bg-slate-800/40 backdrop-blur-lg rounded-2xl p-6 border border-amber-500/20 max-w-xs">
+     <p class="text-slate-300 text-sm mb-3 font-semibold">🎯 Progress Keseluruhan</p>
+     <div class="w-full h-3 bg-slate-700/50 rounded-full overflow-hidden">
+      <div id="total-progress-bar" class="progress-bar h-full rounded-full" style="width: 0%"></div>
+     </div>
+     <p id="total-progress-text" class="text-amber-300 text-sm mt-3 font-semibold">0 / 66 Kitab</p>
+    </div>
+   </div><!-- World Map Screen -->
+   <div id="world-map" class="min-h-full p-6 hidden">
+    <div class="max-w-7xl mx-auto">
+     <div class="flex items-center justify-between mb-12"><button onclick="showMainMenu()" class="flex items-center gap-2 text-amber-300 hover:text-amber-200 transition-colors font-semibold"> <span class="text-2xl">←</span> Kembali </button>
+      <h2 class="font-title text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400">Pilih Dunia</h2>
+      <div class="w-20"></div>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="worlds-container"></div>
+    </div>
+   </div><!-- Books List Screen -->
+   <div id="books-screen" class="min-h-full p-6 hidden">
+    <div class="max-w-4xl mx-auto">
+     <div class="flex items-center justify-between mb-8"><button onclick="showWorldMap()" class="flex items-center gap-2 text-amber-300 hover:text-amber-200 transition-colors font-semibold"> <span class="text-2xl">←</span> Kembali </button>
+      <h2 id="world-title" class="font-title text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400"></h2>
+      <div class="w-20"></div>
+     </div>
+     <div id="books-container" class="space-y-3"></div>
+    </div>
+   </div><!-- Game Screen -->
+   <div id="game-screen" class="min-h-full p-6 hidden">
+    <div class="max-w-2xl mx-auto">
+     <div class="flex items-center justify-between mb-8"><button id="back-to-books" class="flex items-center gap-2 text-amber-300 hover:text-amber-200 transition-colors font-semibold"> <span class="text-2xl">←</span> Kembali </button>
+      <div class="text-center">
+       <h2 id="game-book-title" class="font-title text-2xl text-amber-300"></h2>
+       <p id="game-book-theme" class="text-slate-400 text-sm"></p>
+      </div>
+      <div id="game-score" class="text-amber-300 font-bold bg-slate-800/50 px-4 py-2 rounded-lg border border-amber-500/30">
+       Skor: <span id="current-score">0</span>
+      </div>
+     </div>
+     <div id="game-content" class="bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-lg"></div>
+    </div>
+   </div><!-- Progress Screen -->
+   <div id="progress-screen" class="min-h-full p-6 hidden">
+    <div class="max-w-4xl mx-auto">
+     <div class="flex items-center justify-between mb-12"><button onclick="showMainMenu()" class="flex items-center gap-2 text-amber-300 hover:text-amber-200 transition-colors font-semibold"> <span class="text-2xl">←</span> Kembali </button>
+      <h2 class="font-title text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400">📊 Progress Anda</h2>
+      <div class="w-20"></div>
+     </div>
+     <div id="progress-content" class="space-y-6"></div>
+    </div>
+   </div><!-- About Screen -->
+   <div id="about-screen" class="min-h-full p-6 hidden">
+    <div class="max-w-2xl mx-auto">
+     <div class="flex items-center justify-between mb-12"><button onclick="showMainMenu()" class="flex items-center gap-2 text-amber-300 hover:text-amber-200 transition-colors font-semibold"> <span class="text-2xl">←</span> Kembali </button>
+      <h2 class="font-title text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400">Tentang Game</h2>
+      <div class="w-20"></div>
+     </div>
+     <div class="bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-2xl p-8 border border-slate-700/50 backdrop-blur-lg space-y-6">
+      <div class="text-center">
+       <div class="text-6xl mb-4">
+        📖✨
+       </div>
+       <h3 class="font-title text-3xl text-amber-300 mb-2">Bible Quest</h3>
+       <p class="text-slate-300">Petualangan Interaktif Mempelajari Alkitab</p>
+      </div>
+      <div class="space-y-4 text-slate-300">
+       <p class="leading-relaxed"><strong class="text-amber-300">Bible Quest</strong> adalah game edukasi yang dirancang untuk membantu Anda mempelajari 66 kitab dalam Alkitab dengan cara yang menyenangkan dan interaktif.</p>
+       <div class="bg-slate-900/50 rounded-xl p-4 border border-amber-500/20">
+        <h4 class="text-amber-300 font-semibold mb-2">🎮 Fitur Game:</h4>
+        <ul class="space-y-1 text-sm">
+         <li>• 7 Dunia petualangan</li>
+         <li>• 66 Kitab untuk dipelajari</li>
+         <li>• Berbagai jenis mini game</li>
+         <li>• Sistem bintang &amp; skor</li>
+         <li>• Progress tersimpan otomatis</li>
+        </ul>
+       </div>
+       <div class="bg-slate-900/50 rounded-xl p-4 border border-amber-500/20">
+        <h4 class="text-amber-300 font-semibold mb-2">📚 Struktur:</h4>
+        <ul class="space-y-1 text-sm">
+         <li>📜 Dunia 1: Taurat (5 Kitab)</li>
+         <li>🏹 Dunia 2: Sejarah (12 Kitab)</li>
+         <li>📖 Dunia 3: Puisi &amp; Hikmat (5 Kitab)</li>
+         <li>🔥 Dunia 4: Nabi (17 Kitab)</li>
+         <li>✝️ Dunia 5: Injil &amp; Sejarah (5 Kitab)</li>
+         <li>✉️ Dunia 6: Surat-surat (21 Kitab)</li>
+         <li>👑 Final Boss: Wahyu (1 Kitab)</li>
+        </ul>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div><!-- Game Result Modal -->
+   <div id="result-modal" class="fixed inset-0 bg-black/70 modal-overlay hidden items-center justify-center z-50 p-4">
+    <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-md w-full border-2 border-amber-500/40 text-center shadow-2xl">
+     <div id="result-icon" class="text-7xl mb-4 animate-bounce">
+      🎉
+     </div>
+     <h3 id="result-title" class="font-title text-2xl text-amber-300 mb-2">Luar Biasa!</h3>
+     <p id="result-message" class="text-slate-300 mb-6"></p>
+     <div id="result-stars" class="flex justify-center gap-2 text-4xl mb-8"></div>
+     <div class="flex flex-col gap-3">
+      <button id="play-again-btn" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-900 font-bold rounded-xl transition-all transform hover:scale-105"> 🔄 Main Lagi </button> <button id="next-book-btn" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-amber-300 font-semibold rounded-xl transition-all"> ➡️ Kitab Berikutnya </button> <button onclick="closeResultModal()" class="text-slate-400 hover:text-slate-300 transition-colors"> Kembali ke Daftar </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <style>
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+  </style>
+  <script>
+    // Game Data
+    const gameData = {
+      worlds: [
+        {
+          id: 1,
+          name: "Taurat",
+          icon: "📜",
+          description: "5 Kitab Musa",
+          color: "from-amber-600 to-yellow-600",
+          books: [
+            { id: "genesis", name: "Kejadian", theme: "Penciptaan & awal manusia", summary: "Penciptaan, kejatuhan, air bah, Abraham", gameType: "order" },
+            { id: "exodus", name: "Keluaran", theme: "Pembebasan", summary: "Musa, 10 tulah, Laut Terbelah", gameType: "puzzle" },
+            { id: "leviticus", name: "Imamat", theme: "Kekudusan", summary: "Hukum ibadah & persembahan", gameType: "choice" },
+            { id: "numbers", name: "Bilangan", theme: "Perjalanan & ketidaktaatan", summary: "40 tahun di padang gurun", gameType: "quiz" },
+            { id: "deuteronomy", name: "Ulangan", theme: "Pengulangan hukum", summary: "Pesan terakhir Musa", gameType: "quiz" }
+          ]
+        },
+        {
+          id: 2,
+          name: "Sejarah",
+          icon: "🏹",
+          description: "12 Kitab Sejarah Israel",
+          color: "from-emerald-600 to-teal-600",
+          books: [
+            { id: "joshua", name: "Yosua", theme: "Penaklukan Kanaan", summary: "Memasuki Tanah Perjanjian", gameType: "quiz" },
+            { id: "judges", name: "Hakim-hakim", theme: "Siklus dosa & pertobatan", summary: "Hakim-hakim Israel", gameType: "choice" },
+            { id: "ruth", name: "Rut", theme: "Kesetiaan", summary: "Kisah Rut dan Boas", gameType: "story" },
+            { id: "1samuel", name: "1 Samuel", theme: "Samuel & Saul", summary: "Nabi Samuel dan Raja Saul", gameType: "quiz" },
+            { id: "2samuel", name: "2 Samuel", theme: "Daud jadi raja", summary: "Kerajaan Daud", gameType: "quiz" },
+            { id: "1kings", name: "1 Raja-raja", theme: "Salomo & kerajaan terpecah", summary: "Hikmat Salomo", gameType: "quiz" },
+            { id: "2kings", name: "2 Raja-raja", theme: "Kejatuhan Israel & Yehuda", summary: "Raja-raja terakhir", gameType: "timeline" },
+            { id: "1chronicles", name: "1 Tawarikh", theme: "Silsilah & Daud", summary: "Sejarah keturunan", gameType: "puzzle" },
+            { id: "2chronicles", name: "2 Tawarikh", theme: "Raja-raja Yehuda", summary: "Sejarah Yehuda", gameType: "quiz" },
+            { id: "ezra", name: "Ezra", theme: "Kembali dari pembuangan", summary: "Membangun kembali", gameType: "quiz" },
+            { id: "nehemiah", name: "Nehemia", theme: "Bangun tembok", summary: "Tembok Yerusalem", gameType: "quiz" },
+            { id: "esther", name: "Ester", theme: "Penyelamatan bangsa", summary: "Ratu Ester", gameType: "story" }
+          ]
+        },
+        {
+          id: 3,
+          name: "Puisi & Hikmat",
+          icon: "📖",
+          description: "5 Kitab Puisi",
+          color: "from-purple-600 to-indigo-600",
+          books: [
+            { id: "job", name: "Ayub", theme: "Penderitaan & iman", summary: "Ujian iman Ayub", gameType: "choice" },
+            { id: "psalms", name: "Mazmur", theme: "Doa & pujian", summary: "150 Mazmur Daud", gameType: "verse" },
+            { id: "proverbs", name: "Amsal", theme: "Hikmat hidup", summary: "Hikmat Salomo", gameType: "choice" },
+            { id: "ecclesiastes", name: "Pengkhotbah", theme: "Makna hidup", summary: "Kesia-siaan dunia", gameType: "choice" },
+            { id: "songofsolomon", name: "Kidung Agung", theme: "Cinta & kesetiaan", summary: "Kasih sejati", gameType: "puzzle" }
+          ]
+        },
+        {
+          id: 4,
+          name: "Para Nabi",
+          icon: "🔥",
+          description: "17 Kitab Nubuat",
+          color: "from-red-600 to-orange-600",
+          books: [
+            { id: "isaiah", name: "Yesaya", theme: "Nubuat Mesias", summary: "Nabi besar pertama", gameType: "quiz" },
+            { id: "jeremiah", name: "Yeremia", theme: "Peringatan & pertobatan", summary: "Nabi yang menangis", gameType: "choice" },
+            { id: "lamentations", name: "Ratapan", theme: "Dukacita", summary: "Ratapan Yeremia", gameType: "verse" },
+            { id: "ezekiel", name: "Yehezkiel", theme: "Penglihatan simbolis", summary: "Penglihatan di Babel", gameType: "puzzle" },
+            { id: "daniel", name: "Daniel", theme: "Kesetiaan di Babel", summary: "Gua singa", gameType: "quiz" },
+            { id: "hosea", name: "Hosea", theme: "Kasih setia Tuhan", summary: "Kasih yang tak bersyarat", gameType: "quiz" },
+            { id: "joel", name: "Yoel", theme: "Hari Tuhan", summary: "Belalang dan pemulihan", gameType: "quiz" },
+            { id: "amos", name: "Amos", theme: "Keadilan", summary: "Nabi gembala", gameType: "quiz" },
+            { id: "obadiah", name: "Obaja", theme: "Hukuman Edom", summary: "Kitab terpendek PL", gameType: "quiz" },
+            { id: "jonah", name: "Yunus", theme: "Pertobatan Niniwe", summary: "Ikan besar", gameType: "story" },
+            { id: "micah", name: "Mikha", theme: "Nubuat Mesias", summary: "Bethlehem", gameType: "quiz" },
+            { id: "nahum", name: "Nahum", theme: "Kejatuhan Niniwe", summary: "Penghakiman Niniwe", gameType: "quiz" },
+            { id: "habakkuk", name: "Habakuk", theme: "Iman dalam krisis", summary: "Dialog dengan Tuhan", gameType: "choice" },
+            { id: "zephaniah", name: "Zefanya", theme: "Hari Tuhan", summary: "Murka dan pemulihan", gameType: "quiz" },
+            { id: "haggai", name: "Hagai", theme: "Bangun Bait Allah", summary: "Prioritas Tuhan", gameType: "quiz" },
+            { id: "zechariah", name: "Zakharia", theme: "Penglihatan & Mesias", summary: "8 penglihatan", gameType: "quiz" },
+            { id: "malachi", name: "Maleakhi", theme: "Persiapan Mesias", summary: "Nabi terakhir PL", gameType: "quiz" }
+          ]
+        },
+        {
+          id: 5,
+          name: "Injil & Kisah",
+          icon: "✝️",
+          description: "5 Kitab tentang Yesus",
+          color: "from-sky-600 to-blue-600",
+          books: [
+            { id: "matthew", name: "Matius", theme: "Yesus Raja", summary: "Injil bagi Yahudi", gameType: "quiz" },
+            { id: "mark", name: "Markus", theme: "Yesus Pelayan", summary: "Injil aksi", gameType: "quiz" },
+            { id: "luke", name: "Lukas", theme: "Yesus Juruselamat", summary: "Injil dokter", gameType: "timeline" },
+            { id: "john", name: "Yohanes", theme: "Yesus Anak Allah", summary: "Injil rohani", gameType: "verse" },
+            { id: "acts", name: "Kisah Para Rasul", theme: "Gereja mula-mula", summary: "Penyebaran Injil", gameType: "quiz" }
+          ]
+        },
+        {
+          id: 6,
+          name: "Surat-surat",
+          icon: "✉️",
+          description: "21 Surat Rasuli",
+          color: "from-pink-600 to-rose-600",
+          books: [
+            { id: "romans", name: "Roma", theme: "Keselamatan oleh iman", summary: "Teologi Paulus", gameType: "quiz" },
+            { id: "1corinthians", name: "1 Korintus", theme: "Kesatuan jemaat", summary: "Masalah jemaat", gameType: "choice" },
+            { id: "2corinthians", name: "2 Korintus", theme: "Pelayanan", summary: "Pembelaan Paulus", gameType: "quiz" },
+            { id: "galatians", name: "Galatia", theme: "Kasih karunia", summary: "Kebebasan di Kristus", gameType: "quiz" },
+            { id: "ephesians", name: "Efesus", theme: "Perlengkapan rohani", summary: "Tubuh Kristus", gameType: "puzzle" },
+            { id: "philippians", name: "Filipi", theme: "Sukacita", summary: "Surat sukacita", gameType: "verse" },
+            { id: "colossians", name: "Kolose", theme: "Kristus pusat", summary: "Keunggulan Kristus", gameType: "quiz" },
+            { id: "1thessalonians", name: "1 Tesalonika", theme: "Kedatangan Tuhan", summary: "Pengharapan", gameType: "quiz" },
+            { id: "2thessalonians", name: "2 Tesalonika", theme: "Pengharapan", summary: "Hari Tuhan", gameType: "quiz" },
+            { id: "1timothy", name: "1 Timotius", theme: "Kepemimpinan", summary: "Nasihat pemimpin", gameType: "choice" },
+            { id: "2timothy", name: "2 Timotius", theme: "Kesetiaan", summary: "Surat terakhir Paulus", gameType: "quiz" },
+            { id: "titus", name: "Titus", theme: "Tata gereja", summary: "Pemimpin yang benar", gameType: "quiz" },
+            { id: "philemon", name: "Filemon", theme: "Pengampunan", summary: "Budak Onesimus", gameType: "story" },
+            { id: "hebrews", name: "Ibrani", theme: "Kristus Imam Besar", summary: "Lebih baik dari PL", gameType: "quiz" },
+            { id: "james", name: "Yakobus", theme: "Iman & perbuatan", summary: "Iman yang hidup", gameType: "choice" },
+            { id: "1peter", name: "1 Petrus", theme: "Bertahan dalam penderitaan", summary: "Pengharapan hidup", gameType: "quiz" },
+            { id: "2peter", name: "2 Petrus", theme: "Waspada ajaran sesat", summary: "Peringatan terakhir", gameType: "quiz" },
+            { id: "1john", name: "1 Yohanes", theme: "Kasih", summary: "Allah adalah kasih", gameType: "verse" },
+            { id: "2john", name: "2 Yohanes", theme: "Kebenaran", summary: "Berjalan dalam kasih", gameType: "quiz" },
+            { id: "3john", name: "3 Yohanes", theme: "Kesetiaan", summary: "Surat pribadi", gameType: "quiz" },
+            { id: "jude", name: "Yudas", theme: "Melawan ajaran palsu", summary: "Peringatan keras", gameType: "quiz" }
+          ]
+        },
+        {
+          id: 7,
+          name: "Final Boss",
+          icon: "👑",
+          description: "Kitab Wahyu",
+          color: "from-yellow-500 to-amber-500",
+          books: [
+            { id: "revelation", name: "Wahyu", theme: "Kemenangan akhir", summary: "Penglihatan Yohanes", gameType: "puzzle" }
+          ]
+        }
+      ],
+      
+      questions: {
+        genesis: [
+          { q: "Siapa yang membuat langit dan bumi?", options: ["Tuhan", "Malaikat", "Musa", "Abraham"], answer: 0 },
+          { q: "Berapa hari Tuhan menciptakan dunia?", options: ["5 hari", "6 hari", "7 hari", "3 hari"], answer: 1 },
+          { q: "Siapa istri pertama Adam?", options: ["Sara", "Hawa", "Rahel", "Ribka"], answer: 1 },
+          { q: "Siapa yang selamat dari air bah?", options: ["Abraham", "Musa", "Nuh", "Yakub"], answer: 2 },
+          { q: "Apa janji Tuhan kepada Abraham?", options: ["Keturunan banyak", "Emas", "Kerajaan besar", "Umur panjang"], answer: 0 }
+        ],
+        exodus: [
+          { q: "Siapa yang memimpin bangsa Israel keluar dari Mesir?", options: ["Yosua", "Harun", "Musa", "Kaleb"], answer: 2 },
+          { q: "Berapa jumlah tulah di Mesir?", options: ["5", "7", "10", "12"], answer: 2 },
+          { q: "Laut apa yang terbelah?", options: ["Laut Galilea", "Laut Mati", "Laut Merah", "Laut Tengah"], answer: 2 },
+          { q: "Di gunung mana Musa menerima 10 Perintah?", options: ["Sinai", "Karmel", "Nebo", "Horeb"], answer: 0 },
+          { q: "Apa makanan dari langit di padang gurun?", options: ["Roti", "Manna", "Ikan", "Buah"], answer: 1 }
+        ],
+        leviticus: [
+          { q: "Kitab Imamat terutama berisi tentang?", options: ["Sejarah", "Puisi", "Hukum ibadah", "Nubuat"], answer: 2 },
+          { q: "Siapa yang bertugas di Kemah Suci?", options: ["Semua orang", "Suku Lewi", "Suku Yehuda", "Raja"], answer: 1 },
+          { q: "Hari Pendamaian disebut juga?", options: ["Paskah", "Yom Kippur", "Purim", "Sukkot"], answer: 1 },
+          { q: "Apa tujuan persembahan korban?", options: ["Hiburan", "Penebusan dosa", "Pesta", "Olahraga"], answer: 1 },
+          { q: "Siapa imam besar pertama Israel?", options: ["Musa", "Harun", "Yosua", "Pineas"], answer: 1 }
+        ],
+        numbers: [
+          { q: "Berapa lama Israel di padang gurun?", options: ["10 tahun", "20 tahun", "40 tahun", "50 tahun"], answer: 2 },
+          { q: "Berapa mata-mata yang dikirim ke Kanaan?", options: ["10", "12", "7", "5"], answer: 1 },
+          { q: "Siapa 2 mata-mata yang setia?", options: ["Musa & Harun", "Yosua & Kaleb", "Nadab & Abihu", "Hur & Bezaleel"], answer: 1 },
+          { q: "Apa yang mengigit bangsa Israel?", options: ["Singa", "Kalajengking", "Ular", "Lebah"], answer: 2 },
+          { q: "Apa simbol penyembuhan di padang gurun?", options: ["Ular tembaga", "Tongkat emas", "Batu mulia", "Perisai"], answer: 0 }
+        ],
+        deuteronomy: [
+          { q: "Siapa yang menyampaikan pesan di kitab Ulangan?", options: ["Yosua", "Musa", "Harun", "Kaleb"], answer: 1 },
+          { q: "'Shema Israel' artinya?", options: ["Pergi Israel", "Dengarlah Israel", "Bangun Israel", "Berjuang Israel"], answer: 1 },
+          { q: "Gunung tempat Musa meninggal?", options: ["Sinai", "Karmel", "Nebo", "Horeb"], answer: 2 },
+          { q: "Siapa pengganti Musa?", options: ["Kaleb", "Harun", "Yosua", "Eleazar"], answer: 2 },
+          { q: "Perintah terbesar menurut Ulangan?", options: ["Jangan membunuh", "Kasihilah Tuhan", "Jangan mencuri", "Hormati orangtua"], answer: 1 }
+        ],
+        joshua: [
+          { q: "Kota pertama yang ditaklukkan Israel?", options: ["Ai", "Yerikho", "Hebron", "Yerusalem"], answer: 1 },
+          { q: "Berapa kali Israel mengelilingi Yerikho di hari ke-7?", options: ["1", "3", "7", "12"], answer: 2 },
+          { q: "Siapa wanita yang menolong mata-mata Israel?", options: ["Debora", "Rahab", "Rut", "Yael"], answer: 1 },
+          { q: "Apa yang dihentikan Yosua saat perang?", options: ["Hujan", "Angin", "Matahari", "Petir"], answer: 2 },
+          { q: "Yosua berkata: 'Aku dan serumahtanggaku akan...'", options: ["Pergi", "Bekerja", "Beribadah", "Melayani Tuhan"], answer: 3 }
+        ],
+        judges: [
+          { q: "Berapa hakim dalam kitab ini?", options: ["5", "7", "12", "15"], answer: 2 },
+          { q: "Siapa hakim wanita?", options: ["Rut", "Debora", "Ester", "Rahab"], answer: 1 },
+          { q: "Siapa hakim terkuat?", options: ["Gideon", "Simson", "Ehud", "Yefta"], answer: 1 },
+          { q: "Apa rahasia kekuatan Simson?", options: ["Otot", "Rambutnya", "Makanan", "Senjata"], answer: 1 },
+          { q: "Apa siklus yang berulang di kitab ini?", options: ["Berkat", "Dosa-hukuman-pertobatan", "Perang", "Damai"], answer: 1 }
+        ],
+        ruth: [
+          { q: "Rut berasal dari mana?", options: ["Israel", "Mesir", "Moab", "Edom"], answer: 2 },
+          { q: "Siapa mertua Rut?", options: ["Sara", "Naomi", "Lea", "Rahel"], answer: 1 },
+          { q: "Rut menikah dengan siapa?", options: ["Boas", "Mahlon", "Kilyon", "Elimelekh"], answer: 0 },
+          { q: "Rut adalah nenek moyang siapa?", options: ["Musa", "Daud", "Samuel", "Salomo"], answer: 1 },
+          { q: "Rut berkata: 'Bangsamulah...'", options: ["Musuhku", "Temanku", "Bangsaku", "Lawanku"], answer: 2 }
+        ],
+        "1samuel": [
+          { q: "Siapa ibu Samuel?", options: ["Sara", "Hana", "Ribka", "Lea"], answer: 1 },
+          { q: "Siapa raja pertama Israel?", options: ["Daud", "Salomo", "Saul", "Samuel"], answer: 2 },
+          { q: "Siapa yang mengurapi raja-raja Israel?", options: ["Musa", "Samuel", "Eli", "Harun"], answer: 1 },
+          { q: "Siapa yang membunuh Goliat?", options: ["Saul", "Yonatan", "Daud", "Abner"], answer: 2 },
+          { q: "Dengan apa Daud membunuh Goliat?", options: ["Pedang", "Batu ketapel", "Tombak", "Panah"], answer: 1 }
+        ],
+        "2samuel": [
+          { q: "Siapa sahabat Daud?", options: ["Saul", "Yonatan", "Abner", "Absalom"], answer: 1 },
+          { q: "Kota apa yang jadi ibukota Daud?", options: ["Hebron", "Betel", "Yerusalem", "Sikhem"], answer: 2 },
+          { q: "Siapa anak Daud yang memberontak?", options: ["Salomo", "Absalom", "Amnon", "Adonya"], answer: 1 },
+          { q: "Siapa nabi yang menegur Daud?", options: ["Elia", "Natan", "Samuel", "Gad"], answer: 1 },
+          { q: "Daud berdosa dengan siapa?", options: ["Rahab", "Batsyeba", "Rut", "Abigail"], answer: 1 }
+        ],
+        "1kings": [
+          { q: "Siapa raja terbijak?", options: ["Daud", "Salomo", "Rehabeam", "Yerobeam"], answer: 1 },
+          { q: "Apa yang dibangun Salomo?", options: ["Tembok", "Bait Allah", "Istana raja", "Benteng"], answer: 1 },
+          { q: "Kerajaan terpecah menjadi berapa?", options: ["2", "3", "4", "5"], answer: 0 },
+          { q: "Siapa nabi yang melawan Ahab?", options: ["Elisa", "Elia", "Yesaya", "Yeremia"], answer: 1 },
+          { q: "Siapa istri jahat raja Ahab?", options: ["Izebel", "Atalya", "Batsyeba", "Mikhal"], answer: 0 }
+        ],
+        "2kings": [
+          { q: "Siapa pengganti Elia?", options: ["Yehu", "Elisa", "Naaman", "Gehazi"], answer: 1 },
+          { q: "Israel utara jatuh ke tangan?", options: ["Mesir", "Babel", "Asyur", "Persia"], answer: 2 },
+          { q: "Yehuda jatuh ke tangan?", options: ["Mesir", "Babel", "Asyur", "Persia"], answer: 1 },
+          { q: "Raja baik terakhir Yehuda?", options: ["Hizkia", "Yosia", "Zedekia", "Yoyakim"], answer: 1 },
+          { q: "Siapa yang sembuh dari kusta oleh Elisa?", options: ["Gehazi", "Naaman", "Hazael", "Yehu"], answer: 1 }
+        ],
+        "1chronicles": [
+          { q: "Kitab ini fokus pada siapa?", options: ["Salomo", "Daud", "Samuel", "Saul"], answer: 1 },
+          { q: "Apa yang dimulai dengan silsilah?", options: ["Kejadian", "1 Tawarikh", "Matius", "Nehemia"], answer: 1 },
+          { q: "Daud ingin membangun apa?", options: ["Istana", "Tembok", "Bait Allah", "Menara"], answer: 2 },
+          { q: "Siapa yang boleh membangun Bait Allah?", options: ["Daud", "Salomo", "Hiram", "Nathan"], answer: 1 },
+          { q: "Kitab ini ditulis setelah?", options: ["Pembuangan", "Air bah", "Keluaran", "Penaklukan"], answer: 0 }
+        ],
+        "2chronicles": [
+          { q: "Kitab ini dimulai dengan siapa?", options: ["Daud", "Salomo", "Rehabeam", "Yerobeam"], answer: 1 },
+          { q: "Raja yang bertobat?", options: ["Manasye", "Amon", "Ahaz", "Atalya"], answer: 0 },
+          { q: "Raja yang menemukan Kitab Hukum?", options: ["Hizkia", "Yosia", "Asa", "Yosafat"], answer: 1 },
+          { q: "Siapa yang menghancurkan Bait Allah?", options: ["Asyur", "Mesir", "Babel", "Persia"], answer: 2 },
+          { q: "Berapa lama pembuangan di Babel?", options: ["40 tahun", "50 tahun", "70 tahun", "100 tahun"], answer: 2 }
+        ],
+        ezra: [
+          { q: "Raja mana yang mengizinkan Israel pulang?", options: ["Nebukadnezar", "Koresh", "Darius", "Artahsasta"], answer: 1 },
+          { q: "Ezra adalah seorang?", options: ["Raja", "Nabi", "Ahli Taurat", "Imam"], answer: 2 },
+          { q: "Apa yang dibangun kembali?", options: ["Tembok", "Bait Allah", "Istana", "Benteng"], answer: 1 },
+          { q: "Siapa pemimpin rombongan pertama?", options: ["Ezra", "Zerubabel", "Nehemia", "Yesua"], answer: 1 },
+          { q: "Masalah utama yang dihadapi Ezra?", options: ["Perang", "Kawin campur", "Kelaparan", "Penyakit"], answer: 1 }
+        ],
+        nehemiah: [
+          { q: "Nehemia bekerja sebagai?", options: ["Tentara", "Juru minuman raja", "Imam", "Petani"], answer: 1 },
+          { q: "Apa yang dibangun Nehemia?", options: ["Bait Allah", "Tembok Yerusalem", "Istana", "Jalan"], answer: 1 },
+          { q: "Berapa lama membangun tembok?", options: ["52 hari", "52 minggu", "52 bulan", "52 tahun"], answer: 0 },
+          { q: "Siapa yang menentang Nehemia?", options: ["Sanbalat & Tobia", "Koresh & Darius", "Ezra & Zerubabel", "Haggai & Zakharia"], answer: 0 },
+          { q: "Nehemia berdoa sebelum?", options: ["Makan", "Tidur", "Bicara pada raja", "Bekerja"], answer: 2 }
+        ],
+        esther: [
+          { q: "Ester adalah ratu di kerajaan?", options: ["Babel", "Mesir", "Persia", "Asyur"], answer: 2 },
+          { q: "Siapa paman Ester?", options: ["Haman", "Mordekhai", "Ahasyweros", "Hegai"], answer: 1 },
+          { q: "Siapa musuh orang Yahudi?", options: ["Mordekhai", "Haman", "Hegai", "Memukan"], answer: 1 },
+          { q: "Perayaan yang lahir dari kitab ini?", options: ["Paskah", "Purim", "Sukkot", "Hanukkah"], answer: 1 },
+          { q: "Ester berkata: 'Jika aku binasa...'", options: ["Biarlah!", "Tidak mau!", "Tolonglah!", "Larilah!"], answer: 0 }
+        ],
+        job: [
+          { q: "Ayub digambarkan sebagai orang yang?", options: ["Jahat", "Saleh", "Biasa", "Penakut"], answer: 1 },
+          { q: "Siapa yang menyerang Ayub?", options: ["Tuhan", "Iblis", "Manusia", "Malaikat"], answer: 1 },
+          { q: "Berapa sahabat Ayub yang datang?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Apa yang hilang dari Ayub?", options: ["Harta", "Anak", "Kesehatan", "Semua"], answer: 3 },
+          { q: "Di akhir cerita, Ayub?", options: ["Meninggal", "Dipulihkan", "Sakit terus", "Pergi"], answer: 1 }
+        ],
+        psalms: [
+          { q: "Berapa jumlah Mazmur?", options: ["100", "120", "150", "200"], answer: 2 },
+          { q: "Siapa penulis terbanyak?", options: ["Musa", "Daud", "Salomo", "Asaf"], answer: 1 },
+          { q: "Mazmur 23 berbicara tentang?", options: ["Raja", "Gembala", "Prajurit", "Petani"], answer: 1 },
+          { q: "'TUHAN adalah gembalaku' ada di Mazmur?", options: ["1", "23", "91", "119"], answer: 1 },
+          { q: "Mazmur terpanjang?", options: ["1", "23", "91", "119"], answer: 3 }
+        ],
+        proverbs: [
+          { q: "Siapa penulis utama Amsal?", options: ["Daud", "Salomo", "Musa", "Samuel"], answer: 1 },
+          { q: "Permulaan hikmat adalah?", options: ["Ilmu", "Kekayaan", "Takut akan TUHAN", "Kekuatan"], answer: 2 },
+          { q: "Amsal 31 berbicara tentang?", options: ["Raja bijak", "Wanita bijak", "Pemuda bijak", "Tua bijak"], answer: 1 },
+          { q: "Amsal terutama berisi?", options: ["Sejarah", "Nubuat", "Nasihat hikmat", "Doa"], answer: 2 },
+          { q: "'Didiklah anak menurut jalan yang patut' ada di?", options: ["Amsal 1", "Amsal 10", "Amsal 22", "Amsal 31"], answer: 2 }
+        ],
+        ecclesiastes: [
+          { q: "Siapa penulis Pengkhotbah?", options: ["Daud", "Salomo", "Musa", "Samuel"], answer: 1 },
+          { q: "Kata kunci kitab ini?", options: ["Sukacita", "Kesia-siaan", "Kekayaan", "Kebijaksanaan"], answer: 1 },
+          { q: "'Ada waktu untuk segala sesuatu' ada di pasal?", options: ["1", "3", "7", "12"], answer: 1 },
+          { q: "Kesimpulan kitab ini?", options: ["Cari kekayaan", "Takut akan Allah", "Bersenang-senang", "Bekerja keras"], answer: 1 },
+          { q: "'Ingatlah akan Penciptamu' ditujukan untuk?", options: ["Orang tua", "Orang muda", "Raja", "Imam"], answer: 1 }
+        ],
+        songofsolomon: [
+          { q: "Siapa penulis Kidung Agung?", options: ["Daud", "Salomo", "Musa", "Samuel"], answer: 1 },
+          { q: "Tema utama kitab ini?", options: ["Perang", "Kasih", "Hikmat", "Doa"], answer: 1 },
+          { q: "Kidung Agung berbentuk?", options: ["Prosa", "Puisi", "Hukum", "Sejarah"], answer: 1 },
+          { q: "Kasih digambarkan 'sekuat'?", options: ["Singa", "Maut", "Angin", "Air"], answer: 1 },
+          { q: "Berapa pasal dalam Kidung Agung?", options: ["5", "8", "10", "12"], answer: 1 }
+        ],
+        isaiah: [
+          { q: "Yesaya bernubuat di kerajaan?", options: ["Israel utara", "Yehuda", "Babel", "Persia"], answer: 1 },
+          { q: "Nubuat 'Seorang anak telah lahir' ada di pasal?", options: ["1", "7", "9", "53"], answer: 2 },
+          { q: "Yesaya 53 tentang?", options: ["Raja Daud", "Hamba yang menderita", "Nabi Musa", "Imam besar"], answer: 1 },
+          { q: "'Immanuel' artinya?", options: ["Allah kuat", "Allah dengan kita", "Allah raja", "Allah penyelamat"], answer: 1 },
+          { q: "Nubuat perawan melahirkan ada di pasal?", options: ["1", "7", "40", "53"], answer: 1 }
+        ],
+        jeremiah: [
+          { q: "Yeremia disebut nabi?", options: ["Sukacita", "Menangis", "Perang", "Damai"], answer: 1 },
+          { q: "Yeremia bernubuat sebelum jatuhnya?", options: ["Israel utara", "Yehuda", "Mesir", "Asyur"], answer: 1 },
+          { q: "Yeremia dipanggil sejak?", options: ["Dewasa", "Tua", "Dalam kandungan", "Mati"], answer: 2 },
+          { q: "Perjanjian baru dinubuatkan di pasal?", options: ["1", "17", "31", "52"], answer: 2 },
+          { q: "Yeremia dimasukkan ke dalam?", options: ["Api", "Sumur lumpur", "Laut", "Kandang singa"], answer: 1 }
+        ],
+        lamentations: [
+          { q: "Siapa penulis Ratapan?", options: ["Yesaya", "Yeremia", "Yehezkiel", "Daniel"], answer: 1 },
+          { q: "Ratapan ditulis setelah kejatuhan?", options: ["Samaria", "Yerusalem", "Babel", "Niniwe"], answer: 1 },
+          { q: "Berapa pasal dalam Ratapan?", options: ["3", "5", "7", "10"], answer: 1 },
+          { q: "Ratapan berbentuk?", options: ["Prosa", "Puisi akrostik", "Hukum", "Sejarah"], answer: 1 },
+          { q: "'Belas kasihan Tuhan tidak berkesudahan' ada di pasal?", options: ["1", "2", "3", "4"], answer: 2 }
+        ],
+        ezekiel: [
+          { q: "Yehezkiel adalah seorang?", options: ["Raja", "Imam", "Petani", "Tentara"], answer: 1 },
+          { q: "Penglihatan tulang kering ada di pasal?", options: ["1", "10", "37", "48"], answer: 2 },
+          { q: "Yehezkiel bernubuat di?", options: ["Yerusalem", "Babel", "Mesir", "Persia"], answer: 1 },
+          { q: "Penglihatan 4 makhluk ada di pasal?", options: ["1", "10", "37", "48"], answer: 0 },
+          { q: "Bait Allah baru dijelaskan di pasal?", options: ["1-10", "20-30", "40-48", "1-5"], answer: 2 }
+        ],
+        daniel: [
+          { q: "Daniel dibuang ke?", options: ["Mesir", "Asyur", "Babel", "Persia"], answer: 2 },
+          { q: "Daniel dimasukkan ke gua?", options: ["Ular", "Singa", "Beruang", "Harimau"], answer: 1 },
+          { q: "Siapa sahabat Daniel?", options: ["Sadrakh, Mesakh, Abednego", "Petrus, Yohanes, Yakobus", "Ezra, Nehemia, Zerubabel", "Elia, Elisa, Samuel"], answer: 0 },
+          { q: "Perapian yang tidak membakar ada di pasal?", options: ["1", "3", "6", "9"], answer: 1 },
+          { q: "Mimpi patung besar ada di pasal?", options: ["1", "2", "6", "7"], answer: 1 }
+        ],
+        hosea: [
+          { q: "Hosea menikahi wanita bernama?", options: ["Rut", "Gomer", "Lea", "Rahel"], answer: 1 },
+          { q: "Pernikahan Hosea melambangkan?", options: ["Kekayaan", "Kasih Tuhan pada Israel", "Perang", "Damai"], answer: 1 },
+          { q: "Hosea bernubuat di kerajaan?", options: ["Yehuda", "Israel utara", "Babel", "Asyur"], answer: 1 },
+          { q: "Berapa anak Hosea?", options: ["1", "2", "3", "4"], answer: 2 },
+          { q: "Tema utama Hosea?", options: ["Penghakiman", "Kasih setia Tuhan", "Perang", "Hikmat"], answer: 1 }
+        ],
+        joel: [
+          { q: "Bencana apa dalam kitab Yoel?", options: ["Banjir", "Belalang", "Gempa", "Api"], answer: 1 },
+          { q: "Yoel menubuatkan pencurahan?", options: ["Air", "Minyak", "Roh Kudus", "Emas"], answer: 2 },
+          { q: "'Hari TUHAN' dalam Yoel adalah hari?", options: ["Sukacita", "Penghakiman", "Istirahat", "Pesta"], answer: 1 },
+          { q: "Berapa pasal dalam Yoel?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Pencurahan Roh digenapi di?", options: ["Natal", "Paskah", "Pentakosta", "Purim"], answer: 2 }
+        ],
+        amos: [
+          { q: "Amos adalah seorang?", options: ["Raja", "Imam", "Gembala", "Prajurit"], answer: 2 },
+          { q: "Amos bernubuat terutama melawan?", options: ["Kemiskinan", "Ketidakadilan", "Perang", "Penyakit"], answer: 1 },
+          { q: "Amos berasal dari?", options: ["Yerusalem", "Samaria", "Tekoa", "Betel"], answer: 2 },
+          { q: "'Biarlah keadilan bergulung-gulung' ada di pasal?", options: ["1", "3", "5", "9"], answer: 2 },
+          { q: "Amos bernubuat di masa?", options: ["Daud", "Salomo", "Yerobeam II", "Hizkia"], answer: 2 }
+        ],
+        obadiah: [
+          { q: "Obaja adalah kitab terpendek di?", options: ["PB", "PL", "Mazmur", "Amsal"], answer: 1 },
+          { q: "Obaja bernubuat melawan?", options: ["Israel", "Yehuda", "Edom", "Moab"], answer: 2 },
+          { q: "Edom adalah keturunan?", options: ["Yakub", "Esau", "Ismael", "Lot"], answer: 1 },
+          { q: "Berapa pasal dalam Obaja?", options: ["1", "2", "3", "4"], answer: 0 },
+          { q: "Dosa Edom adalah?", options: ["Penyembahan berhala", "Kesombongan", "Ketamakan", "Perzinahan"], answer: 1 }
+        ],
+        jonah: [
+          { q: "Yunus diutus ke?", options: ["Yerusalem", "Babel", "Niniwe", "Mesir"], answer: 2 },
+          { q: "Yunus ditelan oleh?", options: ["Paus", "Ikan besar", "Buaya", "Hiu"], answer: 1 },
+          { q: "Berapa hari Yunus di perut ikan?", options: ["1", "2", "3", "7"], answer: 2 },
+          { q: "Yunus lari ke arah?", options: ["Timur", "Barat (Tarsis)", "Utara", "Selatan"], answer: 1 },
+          { q: "Penduduk Niniwe akhirnya?", options: ["Binasa", "Bertobat", "Melarikan diri", "Melawan"], answer: 1 }
+        ],
+        micah: [
+          { q: "Mikha menubuatkan kelahiran Mesias di?", options: ["Yerusalem", "Nazaret", "Bethlehem", "Kapernaum"], answer: 2 },
+          { q: "Mikha bernubuat di masa yang sama dengan?", options: ["Yeremia", "Yesaya", "Daniel", "Yehezkiel"], answer: 1 },
+          { q: "'Berlaku adil, mencintai kesetiaan' ada di pasal?", options: ["1", "4", "6", "7"], answer: 2 },
+          { q: "Mikha berasal dari?", options: ["Yerusalem", "Moresyet", "Samaria", "Betel"], answer: 1 },
+          { q: "Berapa pasal dalam Mikha?", options: ["5", "7", "9", "12"], answer: 1 }
+        ],
+        nahum: [
+          { q: "Nahum bernubuat tentang kejatuhan?", options: ["Yerusalem", "Babel", "Niniwe", "Samaria"], answer: 2 },
+          { q: "Niniwe adalah ibukota?", options: ["Babel", "Asyur", "Persia", "Mesir"], answer: 1 },
+          { q: "Nahum berbeda dari Yunus karena Niniwe?", options: ["Bertobat lagi", "Sudah jatuh", "Akan dihukum", "Akan diselamatkan"], answer: 2 },
+          { q: "Berapa pasal dalam Nahum?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Tema utama Nahum?", options: ["Kasih", "Pengampunan", "Penghakiman", "Pemulihan"], answer: 2 }
+        ],
+        habakkuk: [
+          { q: "Habakuk bertanya kepada Tuhan tentang?", options: ["Kekayaan", "Ketidakadilan", "Kesehatan", "Keluarga"], answer: 1 },
+          { q: "'Orang benar akan hidup oleh iman' ada di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 1 },
+          { q: "Habakuk bernubuat tentang datangnya?", options: ["Mesir", "Asyur", "Kasdim/Babel", "Persia"], answer: 2 },
+          { q: "Berapa pasal dalam Habakuk?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Di akhir kitab, Habakuk?", options: ["Marah", "Bersukacita dalam Tuhan", "Melarikan diri", "Menyerah"], answer: 1 }
+        ],
+        zephaniah: [
+          { q: "Zefanya adalah keturunan raja?", options: ["Daud", "Hizkia", "Yosia", "Manasye"], answer: 1 },
+          { q: "Tema utama Zefanya?", options: ["Kasih", "Hari TUHAN", "Hikmat", "Kekayaan"], answer: 1 },
+          { q: "Zefanya bernubuat di masa raja?", options: ["Hizkia", "Manasye", "Yosia", "Zedekia"], answer: 2 },
+          { q: "Berapa pasal dalam Zefanya?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "'TUHAN Allahmu ada di antaramu' ada di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 2 }
+        ],
+        haggai: [
+          { q: "Hagai mendorong pembangunan?", options: ["Tembok", "Bait Allah", "Istana", "Jalan"], answer: 1 },
+          { q: "Hagai bernubuat setelah?", options: ["Keluaran", "Pembuangan", "Penaklukan", "Air bah"], answer: 1 },
+          { q: "Berapa pasal dalam Hagai?", options: ["1", "2", "3", "4"], answer: 1 },
+          { q: "Hagai melayani bersama nabi?", options: ["Yeremia", "Yehezkiel", "Zakharia", "Maleakhi"], answer: 2 },
+          { q: "Pemimpin yang didorong Hagai?", options: ["Ezra & Nehemia", "Zerubabel & Yosua", "Daniel & Hananya", "Mordekhai & Ester"], answer: 1 }
+        ],
+        zechariah: [
+          { q: "Zakharia memiliki berapa penglihatan?", options: ["4", "6", "8", "10"], answer: 2 },
+          { q: "'Bukan dengan kekuatan, tetapi dengan Roh-Ku' ada di pasal?", options: ["1", "4", "9", "14"], answer: 1 },
+          { q: "Nubuat raja datang menunggang keledai ada di pasal?", options: ["1", "4", "9", "14"], answer: 2 },
+          { q: "Zakharia melayani bersama nabi?", options: ["Yeremia", "Hagai", "Daniel", "Maleakhi"], answer: 1 },
+          { q: "Berapa pasal dalam Zakharia?", options: ["8", "10", "12", "14"], answer: 3 }
+        ],
+        malachi: [
+          { q: "Maleakhi adalah nabi terakhir?", options: ["PB", "PL", "Sejarah", "Puisi"], answer: 1 },
+          { q: "Maleakhi menegur soal?", options: ["Persembahan yang cacat", "Perang", "Penyakit", "Kemiskinan"], answer: 0 },
+          { q: "'Ujilah Aku dalam hal persembahan' ada di pasal?", options: ["1", "2", "3", "4"], answer: 2 },
+          { q: "Maleakhi menubuatkan kedatangan?", options: ["Musa", "Elia", "Daud", "Samuel"], answer: 1 },
+          { q: "Berapa pasal dalam Maleakhi?", options: ["2", "3", "4", "5"], answer: 2 }
+        ],
+        matthew: [
+          { q: "Matius ditulis terutama untuk orang?", options: ["Romawi", "Yunani", "Yahudi", "Mesir"], answer: 2 },
+          { q: "Matius dimulai dengan silsilah sampai?", options: ["Musa", "Daud", "Abraham", "Adam"], answer: 2 },
+          { q: "Khotbah di Bukit ada di pasal?", options: ["1-2", "5-7", "10-12", "24-25"], answer: 1 },
+          { q: "Berapa perumpamaan di pasal 13?", options: ["3", "5", "7", "9"], answer: 2 },
+          { q: "Perintah Agung ada di pasal?", options: ["1", "10", "16", "28"], answer: 3 }
+        ],
+        mark: [
+          { q: "Markus adalah Injil ter?", options: ["Panjang", "Pendek", "Tua", "Baru"], answer: 1 },
+          { q: "Markus menekankan Yesus sebagai?", options: ["Raja", "Pelayan", "Nabi", "Imam"], answer: 1 },
+          { q: "Kata 'segera' muncul berapa kali?", options: ["10", "20", "40+", "5"], answer: 2 },
+          { q: "Markus menulis untuk orang?", options: ["Yahudi", "Romawi", "Yunani", "Mesir"], answer: 1 },
+          { q: "Markus tidak memiliki kisah?", options: ["Pembaptisan", "Kelahiran Yesus", "Penyaliban", "Kebangkitan"], answer: 1 }
+        ],
+        luke: [
+          { q: "Lukas adalah seorang?", options: ["Nelayan", "Pemungut cukai", "Dokter", "Tentara"], answer: 2 },
+          { q: "Lukas juga menulis?", options: ["Roma", "Kisah Para Rasul", "Ibrani", "Wahyu"], answer: 1 },
+          { q: "Perumpamaan anak yang hilang ada di pasal?", options: ["5", "10", "15", "20"], answer: 2 },
+          { q: "Lukas menekankan Yesus untuk?", options: ["Yahudi saja", "Romawi saja", "Semua orang", "Yunani saja"], answer: 2 },
+          { q: "Kisah kelahiran Yohanes Pembaptis ada di?", options: ["Matius", "Markus", "Lukas", "Yohanes"], answer: 2 }
+        ],
+        john: [
+          { q: "Yohanes dimulai dengan?", options: ["Silsilah", "Kelahiran", "Firman", "Pembaptisan"], answer: 2 },
+          { q: "Berapa tanda (mujizat) di Injil Yohanes?", options: ["5", "7", "10", "12"], answer: 1 },
+          { q: "'Akulah jalan, kebenaran, dan hidup' ada di pasal?", options: ["3", "8", "14", "20"], answer: 2 },
+          { q: "Ayat 'Allah mengasihi dunia' ada di pasal?", options: ["1", "3", "10", "14"], answer: 1 },
+          { q: "Yohanes menulis supaya pembaca?", options: ["Kaya", "Percaya", "Sehat", "Bijak"], answer: 1 }
+        ],
+        acts: [
+          { q: "Siapa penulis Kisah Para Rasul?", options: ["Petrus", "Paulus", "Lukas", "Yohanes"], answer: 2 },
+          { q: "Pentakosta ada di pasal?", options: ["1", "2", "5", "10"], answer: 1 },
+          { q: "Saul bertobat di jalan menuju?", options: ["Yerusalem", "Damsyik", "Roma", "Antiokhia"], answer: 1 },
+          { q: "Berapa perjalanan misi Paulus?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Kisah diakhiri dengan Paulus di?", options: ["Yerusalem", "Antiokhia", "Roma", "Athena"], answer: 2 }
+        ],
+        romans: [
+          { q: "Roma ditulis oleh?", options: ["Petrus", "Paulus", "Yakobus", "Yohanes"], answer: 1 },
+          { q: "'Semua orang telah berbuat dosa' ada di pasal?", options: ["1", "3", "6", "8"], answer: 1 },
+          { q: "'Tidak ada penghukuman' ada di pasal?", options: ["1", "5", "8", "12"], answer: 2 },
+          { q: "Persembahan tubuh yang hidup ada di pasal?", options: ["1", "6", "10", "12"], answer: 3 },
+          { q: "Tema utama Roma?", options: ["Kasih", "Keselamatan oleh iman", "Hikmat", "Akhir zaman"], answer: 1 }
+        ],
+        "1corinthians": [
+          { q: "1 Korintus membahas masalah?", options: ["Teologi", "Jemaat", "Politik", "Ekonomi"], answer: 1 },
+          { q: "Pasal kasih adalah pasal?", options: ["1", "7", "13", "15"], answer: 2 },
+          { q: "Kebangkitan dibahas di pasal?", options: ["1", "7", "13", "15"], answer: 3 },
+          { q: "Karunia Roh dibahas di pasal?", options: ["1-3", "7-9", "12-14", "15-16"], answer: 2 },
+          { q: "Korintus terletak di?", options: ["Italia", "Yunani", "Turki", "Mesir"], answer: 1 }
+        ],
+        "2corinthians": [
+          { q: "2 Korintus adalah surat?", options: ["Pertama", "Terakhir", "Paling pribadi", "Paling pendek"], answer: 2 },
+          { q: "'Kuasa-Ku sempurna dalam kelemahan' ada di pasal?", options: ["1", "5", "9", "12"], answer: 3 },
+          { q: "Paulus membahas pelayanan di pasal?", options: ["1-2", "3-6", "10-13", "semua"], answer: 3 },
+          { q: "'Ciptaan baru' ada di pasal?", options: ["1", "5", "9", "12"], answer: 1 },
+          { q: "Berapa pasal dalam 2 Korintus?", options: ["10", "13", "16", "21"], answer: 1 }
+        ],
+        galatians: [
+          { q: "Galatia membahas?", options: ["Hukum vs Kasih Karunia", "Akhir zaman", "Kepemimpinan", "Pernikahan"], answer: 0 },
+          { q: "Buah Roh ada di pasal?", options: ["1", "3", "5", "6"], answer: 2 },
+          { q: "'Kristus telah memerdekakan kita' ada di pasal?", options: ["1", "3", "5", "6"], answer: 2 },
+          { q: "Paulus menegur siapa di Antiokhia?", options: ["Yakobus", "Yohanes", "Petrus", "Barnabas"], answer: 2 },
+          { q: "Berapa pasal dalam Galatia?", options: ["4", "6", "8", "10"], answer: 1 }
+        ],
+        ephesians: [
+          { q: "Efesus membahas perlengkapan senjata Allah di pasal?", options: ["1", "3", "4", "6"], answer: 3 },
+          { q: "'Oleh kasih karunia kamu diselamatkan' ada di pasal?", options: ["1", "2", "4", "6"], answer: 1 },
+          { q: "Hubungan suami-istri dibahas di pasal?", options: ["1", "3", "5", "6"], answer: 2 },
+          { q: "Efesus adalah surat?", options: ["Pastoral", "Penjara", "Perjalanan", "Pribadi"], answer: 1 },
+          { q: "Berapa pasal dalam Efesus?", options: ["4", "6", "8", "10"], answer: 1 }
+        ],
+        philippians: [
+          { q: "Filipi disebut surat?", options: ["Duka", "Sukacita", "Marah", "Bingung"], answer: 1 },
+          { q: "'Segala perkara dapat kutanggung' ada di pasal?", options: ["1", "2", "3", "4"], answer: 3 },
+          { q: "Kristus mengosongkan diri di pasal?", options: ["1", "2", "3", "4"], answer: 1 },
+          { q: "'Bersukacitalah senantiasa' ada di pasal?", options: ["1", "2", "3", "4"], answer: 3 },
+          { q: "Berapa pasal dalam Filipi?", options: ["2", "4", "6", "8"], answer: 1 }
+        ],
+        colossians: [
+          { q: "Kolose menekankan keunggulan?", options: ["Paulus", "Kristus", "Hukum", "Malaikat"], answer: 1 },
+          { q: "Kristus 'gambar Allah' ada di pasal?", options: ["1", "2", "3", "4"], answer: 0 },
+          { q: "Kolose melawan ajaran?", options: ["Yahudi", "Romawi", "Gnostik/bidat", "Yunani"], answer: 2 },
+          { q: "'Segala sesuatu bagi kemuliaan Tuhan' ada di pasal?", options: ["1", "2", "3", "4"], answer: 2 },
+          { q: "Berapa pasal dalam Kolose?", options: ["2", "4", "6", "8"], answer: 1 }
+        ],
+        "1thessalonians": [
+          { q: "1 Tesalonika membahas?", options: ["Hukum", "Kedatangan Tuhan", "Kepemimpinan", "Persembahan"], answer: 1 },
+          { q: "'Tuhan sendiri akan turun' ada di pasal?", options: ["1", "2", "4", "5"], answer: 2 },
+          { q: "Tesalonika terletak di?", options: ["Italia", "Yunani", "Turki", "Mesir"], answer: 1 },
+          { q: "Ini surat Paulus paling?", options: ["Panjang", "Pendek", "Awal", "Akhir"], answer: 2 },
+          { q: "Berapa pasal dalam 1 Tesalonika?", options: ["3", "5", "7", "9"], answer: 1 }
+        ],
+        "2thessalonians": [
+          { q: "2 Tesalonika membahas?", options: ["Pernikahan", "Hari Tuhan", "Kepemimpinan", "Persembahan"], answer: 1 },
+          { q: "'Siapa tidak mau bekerja, jangan makan' ada di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 2 },
+          { q: "Manusia durhaka dibahas di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 1 },
+          { q: "Berapa pasal dalam 2 Tesalonika?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Surat ini ditulis setelah?", options: ["1 Tesalonika", "Galatia", "Roma", "Filipi"], answer: 0 }
+        ],
+        "1timothy": [
+          { q: "1 Timotius adalah surat?", options: ["Penjara", "Pastoral", "Perjalanan", "Apokaliptik"], answer: 1 },
+          { q: "Syarat penatua ada di pasal?", options: ["1", "3", "5", "6"], answer: 1 },
+          { q: "'Berlatih dalam ibadah' ada di pasal?", options: ["1", "2", "4", "6"], answer: 2 },
+          { q: "'Akar segala kejahatan adalah cinta uang' ada di pasal?", options: ["1", "3", "5", "6"], answer: 3 },
+          { q: "Berapa pasal dalam 1 Timotius?", options: ["4", "6", "8", "10"], answer: 1 }
+        ],
+        "2timothy": [
+          { q: "2 Timotius adalah surat terakhir?", options: ["Petrus", "Yohanes", "Yakobus", "Paulus"], answer: 3 },
+          { q: "'Segala tulisan diilhamkan Allah' ada di pasal?", options: ["1", "2", "3", "4"], answer: 2 },
+          { q: "'Aku telah mengakhiri pertandingan' ada di pasal?", options: ["1", "2", "3", "4"], answer: 3 },
+          { q: "Berapa pasal dalam 2 Timotius?", options: ["2", "4", "6", "8"], answer: 1 },
+          { q: "Paulus menulis dari?", options: ["Penjara Roma", "Yerusalem", "Antiokhia", "Efesus"], answer: 0 }
+        ],
+        titus: [
+          { q: "Titus melayani di?", options: ["Roma", "Korintus", "Kreta", "Efesus"], answer: 2 },
+          { q: "Syarat penatua ada di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 0 },
+          { q: "'Kasih karunia Allah telah nyata' ada di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 1 },
+          { q: "Berapa pasal dalam Titus?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "Titus adalah surat?", options: ["Penjara", "Pastoral", "Perjalanan", "Apokaliptik"], answer: 1 }
+        ],
+        philemon: [
+          { q: "Filemon adalah surat tentang?", options: ["Teologi", "Budak bernama Onesimus", "Akhir zaman", "Karunia Roh"], answer: 1 },
+          { q: "Onesimus artinya?", options: ["Kuat", "Berguna", "Setia", "Bijak"], answer: 1 },
+          { q: "Filemon adalah surat ter?", options: ["Panjang", "Pendek", "Tua", "Baru"], answer: 1 },
+          { q: "Berapa pasal dalam Filemon?", options: ["1", "2", "3", "4"], answer: 0 },
+          { q: "Tema utama Filemon?", options: ["Hukum", "Pengampunan", "Akhir zaman", "Karunia"], answer: 1 }
+        ],
+        hebrews: [
+          { q: "Ibrani menekankan Kristus sebagai?", options: ["Raja", "Nabi", "Imam Besar", "Guru"], answer: 2 },
+          { q: "Pahlawan iman ada di pasal?", options: ["1", "7", "11", "13"], answer: 2 },
+          { q: "Kristus lebih tinggi dari?", options: ["Malaikat", "Musa", "Harun", "Semua"], answer: 3 },
+          { q: "'Iman adalah dasar' ada di pasal?", options: ["1", "7", "11", "13"], answer: 2 },
+          { q: "Berapa pasal dalam Ibrani?", options: ["10", "13", "16", "21"], answer: 1 }
+        ],
+        james: [
+          { q: "Yakobus ditulis oleh?", options: ["Yakobus rasul", "Yakobus saudara Yesus", "Tidak diketahui", "Paulus"], answer: 1 },
+          { q: "'Iman tanpa perbuatan mati' ada di pasal?", options: ["1", "2", "3", "5"], answer: 1 },
+          { q: "Lidah dibahas di pasal?", options: ["1", "2", "3", "5"], answer: 2 },
+          { q: "'Pengujian imanmu menghasilkan ketekunan' ada di pasal?", options: ["1", "2", "3", "5"], answer: 0 },
+          { q: "Berapa pasal dalam Yakobus?", options: ["3", "5", "7", "9"], answer: 1 }
+        ],
+        "1peter": [
+          { q: "1 Petrus ditulis untuk orang yang?", options: ["Kaya", "Menderita", "Berkuasa", "Sehat"], answer: 1 },
+          { q: "'Batu hidup' ada di pasal?", options: ["1", "2", "3", "5"], answer: 1 },
+          { q: "'Lemparkan segala kekuatiranmu' ada di pasal?", options: ["1", "2", "3", "5"], answer: 3 },
+          { q: "Berapa pasal dalam 1 Petrus?", options: ["3", "5", "7", "9"], answer: 1 },
+          { q: "Petrus menulis dari?", options: ["Roma (Babel)", "Yerusalem", "Antiokhia", "Kapernaum"], answer: 0 }
+        ],
+        "2peter": [
+          { q: "2 Petrus memperingatkan tentang?", options: ["Kemiskinan", "Guru palsu", "Penyakit", "Perang"], answer: 1 },
+          { q: "'Seribu tahun seperti satu hari' ada di pasal?", options: ["1", "2", "3", "tidak ada"], answer: 2 },
+          { q: "Berapa pasal dalam 2 Petrus?", options: ["2", "3", "4", "5"], answer: 1 },
+          { q: "2 Petrus mirip dengan surat?", options: ["Yakobus", "Yudas", "Ibrani", "Roma"], answer: 1 },
+          { q: "Petrus menyebut surat siapa sulit dimengerti?", options: ["Yakobus", "Yohanes", "Paulus", "Yudas"], answer: 2 }
+        ],
+        "1john": [
+          { q: "1 Yohanes menekankan?", options: ["Hukum", "Kasih", "Perang", "Hikmat"], answer: 1 },
+          { q: "'Allah adalah kasih' ada di pasal?", options: ["1", "2", "4", "5"], answer: 2 },
+          { q: "'Allah adalah terang' ada di pasal?", options: ["1", "2", "4", "5"], answer: 0 },
+          { q: "Berapa pasal dalam 1 Yohanes?", options: ["3", "5", "7", "9"], answer: 1 },
+          { q: "'Kita mengasihi karena Allah lebih dahulu' ada di pasal?", options: ["1", "2", "4", "5"], answer: 2 }
+        ],
+        "2john": [
+          { q: "2 Yohanes ditulis kepada?", options: ["Timotius", "Gayus", "Ibu yang terpilih", "Filemon"], answer: 2 },
+          { q: "Tema utama 2 Yohanes?", options: ["Kasih dan kebenaran", "Perang", "Hikmat", "Kekayaan"], answer: 0 },
+          { q: "Berapa ayat dalam 2 Yohanes?", options: ["10", "13", "15", "25"], answer: 1 },
+          { q: "2 Yohanes memperingatkan tentang?", options: ["Kemiskinan", "Penyesat", "Penyakit", "Perang"], answer: 1 },
+          { q: "Berapa pasal dalam 2 Yohanes?", options: ["1", "2", "3", "4"], answer: 0 }
+        ],
+        "3john": [
+          { q: "3 Yohanes ditulis kepada?", options: ["Timotius", "Gayus", "Ibu terpilih", "Filemon"], answer: 1 },
+          { q: "Siapa yang suka jadi pemimpin?", options: ["Gayus", "Diotrefes", "Demetrius", "Yohanes"], answer: 1 },
+          { q: "Siapa yang dipuji?", options: ["Gayus & Demetrius", "Diotrefes", "Paulus", "Petrus"], answer: 0 },
+          { q: "Berapa ayat dalam 3 Yohanes?", options: ["10", "14", "18", "25"], answer: 1 },
+          { q: "Berapa pasal dalam 3 Yohanes?", options: ["1", "2", "3", "4"], answer: 0 }
+        ],
+        jude: [
+          { q: "Yudas adalah saudara?", options: ["Petrus", "Yohanes", "Yakobus", "Paulus"], answer: 2 },
+          { q: "Yudas memperingatkan tentang?", options: ["Kemiskinan", "Guru palsu", "Penyakit", "Perang"], answer: 1 },
+          { q: "Yudas menyebut pertengkaran tentang?", options: ["Harta Musa", "Mayat Musa", "Tongkat Musa", "Kitab Musa"], answer: 1 },
+          { q: "Berapa ayat dalam Yudas?", options: ["15", "25", "35", "45"], answer: 1 },
+          { q: "Berapa pasal dalam Yudas?", options: ["1", "2", "3", "4"], answer: 0 }
+        ],
+        revelation: [
+          { q: "Wahyu ditulis oleh?", options: ["Yohanes", "Paulus", "Petrus", "Yakobus"], answer: 0 },
+          { q: "Wahyu ditulis di pulau?", options: ["Kreta", "Patmos", "Siprus", "Malta"], answer: 1 },
+          { q: "Berapa gereja di Asia?", options: ["5", "7", "10", "12"], answer: 1 },
+          { q: "Angka yang sering muncul?", options: ["3", "7", "10", "12"], answer: 1 },
+          { q: "Kota surgawi disebut?", options: ["Yerusalem Baru", "Babel Baru", "Eden Baru", "Sinai Baru"], answer: 0 }
+        ]
+      },
+      
+      imageMap: {
+        joshua: ['🏛️', '⛪', '🔔', '🏰'],
+        judges: ['⚔️', '🔥', '⛪', '🏛️'],
+        ruth: ['🌾', '👨‍🌾', '💍', '🏘️'],
+        "1samuel": ['📯', '👑', '🐑', '🗡️'],
+        "2samuel": ['👸', '🏰', '🏛️', '⚔️'],
+        "1kings": ['💰', '🏛️', '👑', '🌳'],
+        "2kings": ['🔥', '⚔️', '🏘️', '👥'],
+        "1chronicles": ['📜', '🎵', '🏛️', '📖'],
+        "2chronicles": ['⛪', '👑', '💔', '🔥'],
+        ezra: ['🏛️', '📜', '🚶', '⛓️'],
+        nehemiah: ['🧱', '🏛️', '🔨', '⚔️'],
+        esther: ['👑', '🍷', '🎭', '⚔️']
+      }
+    };
+
+    // State Management
+    let currentWorld = null;
+    let currentBook = null;
+    let currentScore = 0;
+    let currentQuestionIndex = 0;
+    let currentQuestions = [];
+    let userProgress = [];
+
+    // Default Config
+    const defaultConfig = {
+      game_title: "Bible Quest",
+      welcome_message: "Petualangan Mempelajari Firman Tuhan"
+    };
+
+    // SDK Initialization
+    async function initializeApp() {
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (config) => {
+            document.getElementById('game-title').textContent = config.game_title || defaultConfig.game_title;
+            document.getElementById('welcome-text').textContent = config.welcome_message || defaultConfig.welcome_message;
+          },
+          mapToCapabilities: () => ({
+            recolorables: [],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["game_title", config.game_title || defaultConfig.game_title],
+            ["welcome_message", config.welcome_message || defaultConfig.welcome_message]
+          ])
+        });
+      }
+
+      if (window.dataSdk) {
+        const dataHandler = {
+          onDataChanged(data) {
+            userProgress = data;
+            updateProgressUI();
+          }
+        };
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) console.error("Failed to initialize Data SDK");
+      }
+
+      renderWorlds();
+      updateProgressUI();
+    }
+
+    // Navigation Functions
+    function showMainMenu() {
+      hideAllScreens();
+      document.getElementById('main-menu').classList.remove('hidden');
+      updateProgressUI();
+    }
+
+    function showWorldMap() {
+      hideAllScreens();
+      document.getElementById('world-map').classList.remove('hidden');
+      renderWorlds();
+    }
+
+    function showBooks(worldId) {
+      currentWorld = gameData.worlds.find(w => w.id === worldId);
+      hideAllScreens();
+      document.getElementById('books-screen').classList.remove('hidden');
+      document.getElementById('world-title').textContent = `${currentWorld.icon} ${currentWorld.name}`;
+      renderBooks();
+    }
+
+    function showProgress() {
+      hideAllScreens();
+      document.getElementById('progress-screen').classList.remove('hidden');
+      renderProgressScreen();
+    }
+
+    function showAbout() {
+      hideAllScreens();
+      document.getElementById('about-screen').classList.remove('hidden');
+    }
+
+    function hideAllScreens() {
+      document.querySelectorAll('#main-menu, #world-map, #books-screen, #game-screen, #progress-screen, #about-screen').forEach(el => {
+        el.classList.add('hidden');
+      });
+    }
+
+    // Render Functions
+    function renderWorlds() {
+      const container = document.getElementById('worlds-container');
+      container.innerHTML = '';
+
+      gameData.worlds.forEach((world, index) => {
+        const completedBooks = world.books.filter(book => {
+          return userProgress.some(p => p.book_id === book.id && p.completed);
+        }).length;
+        const totalBooks = world.books.length;
+        const progressPercent = totalBooks > 0 ? (completedBooks / totalBooks) * 100 : 0;
+        const isLocked = index > 0 && !isWorldUnlocked(index);
+
+        const worldCard = document.createElement('div');
+        worldCard.className = `world-card rounded-2xl p-6 cursor-pointer ${isLocked ? 'opacity-50' : 'hover:scale-105'}`;
+        worldCard.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div class="text-6xl drop-shadow-lg">${world.icon}</div>
+            ${isLocked ? '<div class="text-3xl">🔒</div>' : ''}
+          </div>
+          <h3 class="font-title text-xl text-white font-bold mb-1">Dunia ${world.id}: ${world.name}</h3>
+          <p class="text-white/80 text-sm mb-4">${world.description}</p>
+          <div class="space-y-2">
+            <div class="flex justify-between text-sm text-white/80">
+              <span>Progress</span>
+              <span class="font-semibold">${completedBooks}/${totalBooks}</span>
+            </div>
+            <div class="w-full h-2.5 bg-white/10 rounded-full overflow-hidden border border-white/20">
+              <div class="h-full progress-bar rounded-full" style="width: ${progressPercent}%"></div>
+            </div>
+          </div>
+          ${completedBooks === totalBooks && totalBooks > 0 ? '<div class="mt-3 text-center text-2xl animate-pulse">⭐ Selesai!</div>' : ''}
+        `;
+        
+        if (!isLocked) {
+          worldCard.onclick = () => showBooks(world.id);
+        }
+        
+        container.appendChild(worldCard);
+      });
+    }
+
+    function isWorldUnlocked(worldIndex) {
+      if (worldIndex === 0) return true;
+      const prevWorld = gameData.worlds[worldIndex - 1];
+      const completedBooks = prevWorld.books.filter(book => {
+        return userProgress.some(p => p.book_id === book.id && p.completed);
+      }).length;
+      return completedBooks >= Math.ceil(prevWorld.books.length * 0.5);
+    }
+
+    function renderBooks() {
+      const container = document.getElementById('books-container');
+      container.innerHTML = '';
+
+      currentWorld.books.forEach((book, index) => {
+        const progress = userProgress.find(p => p.book_id === book.id);
+        const isCompleted = progress?.completed || false;
+        const stars = progress?.stars || 0;
+        const isLocked = index > 0 && !isBookUnlocked(index);
+
+        const bookItem = document.createElement('div');
+        bookItem.className = `book-item rounded-xl p-4 cursor-pointer ${isLocked ? 'opacity-50' : ''}`;
+        bookItem.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-full bg-gradient-to-br ${currentWorld.color} flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                ${isLocked ? '🔒' : index + 1}
+              </div>
+              <div>
+                <h4 class="text-amber-200 font-semibold">${book.name}</h4>
+                <p class="text-slate-400 text-sm">${book.theme}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex gap-1">
+                ${[1, 2, 3].map(i => `<span class="${i <= stars ? 'star-filled' : 'star-empty'}">★</span>`).join('')}
+              </div>
+              ${isCompleted ? '<span class="text-emerald-400 text-lg">✓</span>' : ''}
+            </div>
+          </div>
+        `;
+        
+        if (!isLocked) {
+          bookItem.onclick = () => startGame(book);
+        }
+        
+        container.appendChild(bookItem);
+      });
+    }
+
+    function isBookUnlocked(bookIndex) {
+      if (bookIndex === 0) return true;
+      const prevBook = currentWorld.books[bookIndex - 1];
+      return userProgress.some(p => p.book_id === prevBook.id && p.completed);
+    }
+
+    // Game Functions
+    function startGame(book) {
+      currentBook = book;
+      currentScore = 0;
+      currentQuestionIndex = 0;
+      currentQuestions = gameData.questions[book.id] || generateDefaultQuestions(book);
+      
+      hideAllScreens();
+      document.getElementById('game-screen').classList.remove('hidden');
+      document.getElementById('game-book-title').textContent = book.name;
+      document.getElementById('game-book-theme').textContent = book.theme;
+      document.getElementById('current-score').textContent = '0';
+      document.getElementById('back-to-books').onclick = () => showBooks(currentWorld.id);
+      
+      renderQuestion();
+    }
+
+    function generateDefaultQuestions(book) {
+      return [
+        { q: `Apa tema utama kitab ${book.name}?`, options: [book.theme, "Perang", "Kekayaan", "Perjalanan"], answer: 0 },
+        { q: `${book.name} termasuk dalam bagian apa?`, options: [currentWorld.name, "Puisi", "Nubuat", "Sejarah"], answer: 0 },
+        { q: `Apa ringkasan kitab ${book.name}?`, options: [book.summary, "Kisah raja", "Doa pujian", "Nubuat akhir"], answer: 0 }
+      ];
+    }
+
+    function getQuestionImage() {
+      if (currentWorld.id !== 2) return null;
+      return gameData.imageMap[currentBook.id]?.[currentQuestionIndex] || null;
+    }
+
+    function renderQuestion() {
+      const gameContent = document.getElementById('game-content');
+      const question = currentQuestions[currentQuestionIndex];
+      const questionImage = getQuestionImage();
+      
+      let questionHTML = `
+        <div class="text-center mb-8">
+          <span class="text-slate-400 text-sm font-semibold">Pertanyaan ${currentQuestionIndex + 1} dari ${currentQuestions.length}</span>
+          <div class="w-full h-3 bg-slate-700/30 rounded-full mt-3 overflow-hidden border border-slate-600/50">
+            <div class="h-full progress-bar rounded-full" style="width: ${((currentQuestionIndex) / currentQuestions.length) * 100}%"></div>
+          </div>
+        </div>
+      `;
+      
+      if (questionImage) {
+        questionHTML += `
+          <div class="flex justify-center mb-8">
+            <div class="bg-gradient-to-br from-amber-500/30 to-yellow-500/20 rounded-3xl p-10 border-2 border-amber-500/50 backdrop-blur-lg shadow-2xl">
+              <span class="text-8xl drop-shadow-lg inline-block question-image">${questionImage}</span>
+            </div>
+          </div>
+        `;
+      }
+      
+      questionHTML += `
+        <h3 class="text-xl md:text-2xl text-amber-100 font-semibold text-center mb-8">${question.q}</h3>
+        
+        <div class="space-y-3" id="options-container">
+          ${question.options.map((opt, i) => `
+            <button class="game-option w-full text-left p-4 rounded-xl text-slate-200 transition-all transform" data-index="${i}">
+              <span class="inline-block w-8 h-8 rounded-full bg-slate-700/50 text-center leading-8 mr-3 text-amber-300 font-bold">${String.fromCharCode(65 + i)}</span>
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+      `;
+      
+      gameContent.innerHTML = questionHTML;
+      
+      document.querySelectorAll('.game-option').forEach(btn => {
+        btn.onclick = () => handleAnswer(parseInt(btn.dataset.index));
+      });
+    }
+
+    function handleAnswer(selectedIndex) {
+      const question = currentQuestions[currentQuestionIndex];
+      const isCorrect = selectedIndex === question.answer;
+      
+      document.querySelectorAll('.game-option').forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === question.answer) {
+          btn.classList.add('correct');
+        } else if (i === selectedIndex && !isCorrect) {
+          btn.classList.add('wrong');
+        }
+      });
+      
+      if (isCorrect) {
+        currentScore += 20;
+        document.getElementById('current-score').textContent = currentScore;
+      }
+      
+      setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < currentQuestions.length) {
+          renderQuestion();
+        } else {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    async function endGame() {
+      const maxScore = currentQuestions.length * 20;
+      const percentage = (currentScore / maxScore) * 100;
+      let stars = 0;
+      
+      if (percentage >= 80) stars = 3;
+      else if (percentage >= 60) stars = 2;
+      else if (percentage >= 40) stars = 1;
+      
+      if (window.dataSdk && userProgress.length < 999) {
+        const existingProgress = userProgress.find(p => p.book_id === currentBook.id);
+        
+        if (existingProgress) {
+          if (currentScore > existingProgress.score || stars > existingProgress.stars) {
+            const updatedProgress = {
+              ...existingProgress,
+              score: Math.max(currentScore, existingProgress.score),
+              stars: Math.max(stars, existingProgress.stars),
+              completed: true
+            };
+            await window.dataSdk.update(updatedProgress);
+          }
+        } else {
+          await window.dataSdk.create({
+            world_id: currentWorld.id,
+            book_id: currentBook.id,
+            completed: true,
+            score: currentScore,
+            stars: stars
+          });
+        }
+      }
+      
+      showResultModal(percentage, stars);
+    }
+
+    function showResultModal(percentage, stars) {
+      const modal = document.getElementById('result-modal');
+      const icon = document.getElementById('result-icon');
+      const title = document.getElementById('result-title');
+      const message = document.getElementById('result-message');
+      const starsContainer = document.getElementById('result-stars');
+      
+      if (percentage >= 80) {
+        icon.textContent = '🎉';
+        title.textContent = 'Luar Biasa!';
+        message.textContent = `Kamu menguasai kitab ${currentBook.name} dengan sangat baik!`;
+      } else if (percentage >= 60) {
+        icon.textContent = '👏';
+        title.textContent = 'Bagus!';
+        message.textContent = `Kamu sudah memahami kitab ${currentBook.name} dengan baik!`;
+      } else if (percentage >= 40) {
+        icon.textContent = '💪';
+        title.textContent = 'Cukup Baik!';
+        message.textContent = `Terus belajar untuk menguasai kitab ${currentBook.name}!`;
+      } else {
+        icon.textContent = '📖';
+        title.textContent = 'Terus Belajar!';
+        message.textContent = `Jangan menyerah! Pelajari lagi kitab ${currentBook.name}.`;
+      }
+      
+      starsContainer.innerHTML = [1, 2, 3].map(i => 
+        `<span class="${i <= stars ? 'star-filled' : 'star-empty'}" style="animation-delay: ${i * 0.15}s;">★</span>`
+      ).join('');
+      
+      document.getElementById('play-again-btn').onclick = () => {
+        closeResultModal();
+        startGame(currentBook);
+      };
+      
+      const bookIndex = currentWorld.books.findIndex(b => b.id === currentBook.id);
+      const nextBook = currentWorld.books[bookIndex + 1];
+      
+      if (nextBook && stars > 0) {
+        document.getElementById('next-book-btn').classList.remove('hidden');
+        document.getElementById('next-book-btn').onclick = () => {
+          closeResultModal();
+          startGame(nextBook);
+        };
+      } else {
+        document.getElementById('next-book-btn').classList.add('hidden');
+      }
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeResultModal() {
+      const modal = document.getElementById('result-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      showBooks(currentWorld.id);
+    }
+
+    function updateProgressUI() {
+      const totalBooks = gameData.worlds.reduce((sum, w) => sum + w.books.length, 0);
+      const completedBooks = userProgress.filter(p => p.completed).length;
+      const progressPercent = (completedBooks / totalBooks) * 100;
+      
+      const progressBar = document.getElementById('total-progress-bar');
+      const progressText = document.getElementById('total-progress-text');
+      
+      if (progressBar) progressBar.style.width = `${progressPercent}%`;
+      if (progressText) progressText.textContent = `${completedBooks} / ${totalBooks} Kitab`;
+    }
+
+    function renderProgressScreen() {
+      const container = document.getElementById('progress-content');
+      const totalBooks = gameData.worlds.reduce((sum, w) => sum + w.books.length, 0);
+      const completedBooks = userProgress.filter(p => p.completed).length;
+      const totalStars = userProgress.reduce((sum, p) => sum + (p.stars || 0), 0);
+      
+      container.innerHTML = `
+        <div class="bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-lg text-center">
+          <div class="text-5xl mb-4">🏆</div>
+          <h3 class="font-title text-2xl text-amber-300 mb-6">Statistik Anda</h3>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="bg-slate-900/50 rounded-xl p-4 border border-emerald-500/20">
+              <div class="text-3xl font-bold text-emerald-400">${completedBooks}</div>
+              <div class="text-slate-400 text-sm">Kitab Selesai</div>
+            </div>
+            <div class="bg-slate-900/50 rounded-xl p-4 border border-yellow-500/20">
+              <div class="text-3xl font-bold text-yellow-400">${totalStars}</div>
+              <div class="text-slate-400 text-sm">Total Bintang</div>
+            </div>
+            <div class="bg-slate-900/50 rounded-xl p-4 border border-blue-500/20">
+              <div class="text-3xl font-bold text-blue-400">${Math.round((completedBooks / totalBooks) * 100)}%</div>
+              <div class="text-slate-400 text-sm">Progress</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="space-y-4">
+          ${gameData.worlds.map(world => {
+            const worldProgress = userProgress.filter(p => p.world_id === world.id);
+            const completed = worldProgress.filter(p => p.completed).length;
+            const stars = worldProgress.reduce((sum, p) => sum + (p.stars || 0), 0);
+            
+            return `
+              <div class="bg-gradient-to-r from-slate-800/40 to-slate-900/40 rounded-xl p-4 border border-slate-700/50 backdrop-blur-lg">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <span class="text-3xl">${world.icon}</span>
+                    <span class="text-amber-200 font-semibold">${world.name}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-yellow-400 font-semibold">${stars} ★</span>
+                    <span class="text-slate-400">${completed}/${world.books.length}</span>
+                  </div>
+                </div>
+                <div class="w-full h-2.5 bg-slate-700/50 rounded-full overflow-hidden border border-slate-600/50">
+                  <div class="h-full progress-bar rounded-full" style="width: ${(completed / world.books.length) * 100}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    initializeApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cfcf2a287183fb6',t:'MTc3MTQxMTY2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
